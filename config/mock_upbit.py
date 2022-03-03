@@ -2,7 +2,7 @@ class MockUpbit:
     def __init__(
         self,
         seed_money,
-        ticker = 'KRT-BTC'
+        ticker = 'KRW-BTC'
     ):
         self.balances = {
             'KRW': {

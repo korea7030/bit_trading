@@ -53,30 +53,38 @@ def backtesting(
         # 음봉 전환
         if data['open'] - data['close'] < 0:
             tic_count += 1
-            # TODO: 이전 다섯봉 평균보다 2,3배 이상 로직 추가
+            # 이전 다섯봉 평균보다 2,3배 이상 로직 추가
+            if data['close'] >= data['before5_mean'] * 2.5:
+                tic += 1
             tic_start = data['close'] # 직전 마감가
         
-        if tic_count == 2:
-            if data['open'] - data['close'] >= data['close'] * 1.5:
-                tic += 1
+            if tic_count == 2:
+                if data['open'] - data['close'] >= data['close'] * 1.5:
+                    tic += 1
 
-        # 음봉 전환 후 두번째 틱 계산
-        if tic_count > 2:
-            if tic_start - data['close'] >= data['close'] * 1.5: # 일정금액 보다 크면 tic count
-                tic += 1
-                tic_start = data['close'] # tic count시의 직전가
-        
-        if tic == 3:
-            # 구매 금액 체크
+            # 음봉 전환 후 두번째 틱 계산
+            if tic_count > 2:
+                if tic_start - data['close'] >= data['close'] * 1.5: # 일정금액 보다 크면 tic count
+                    tic += 1
+                    tic_start = data['close'] # tic count시의 직전가
+            
+            if tic == 3:
+                # 구매 금액 체크
+                available, price = check_available_bought_price(data['close'].iloc[-1], low, high)
+                if available:
+                    # 구매
+                    trader.buy(price)
+
+        elif data['open'] - data['close'] >= 0: # 양봉전환
             available, price = check_available_bought_price(data['close'].iloc[-1], low, high)
+            # TODO: 특정 금액보다 양봉이 크게 일어난 경우 구매 로직 추가 필요
             if available:
-                # 구매
-                trader.buy(price)
+                trader.sell(price)
 
-            # 3이 되면 초기화
-            tic_start = 0
-            tic_count = 0
-            tic = 0
+                # 구매하면 초기화
+                tic_start = 0
+                tic_count = 0
+                tic = 0
 
         # 입력된 t 시점의 데이터를 바탕으로
         # 살지, 팔지, 그대로 있을지와 거래 금액을 결정합니다.
