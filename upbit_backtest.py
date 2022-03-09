@@ -86,13 +86,13 @@ def backtesting(
             if tic_count == 2:
                 print('================= 음봉전환 후 tic_count : {}'.format(tic_count))
                 # 전종가 * 0.0005 >= 현종가
-                if data['close'].iloc[-1] <= tic_start * (1-0.0008):
+                if data['close'].iloc[-1] <= tic_start * (1-0.0003):
                     tic += 1
 
             # 음봉 전환 후 두번째 틱 계산
             if tic_count > 2:
                 print('======================== 음봉전환 후 두번째 틱 계산 ====================')
-                if data['close'].iloc[-1] <= tic_start * (1-0.0008) : # 일정금액 보다 크면 tic count
+                if data['close'].iloc[-1] <= tic_start * (1-0.0003) : # 일정금액 보다 크면 tic count
                     tic += 1
                     tic_start = data['close'].iloc[-1] # tic count시의 직전가
             
