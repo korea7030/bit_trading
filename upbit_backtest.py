@@ -54,65 +54,75 @@ def backtesting(
     for t in range(test_data.shape[0] - 1):
 
         # t 시점의 데이터를 불러옵니다.
-        data = test_data.iloc[t: t+1]
+        data = test_data.iloc[t]
         # low, high = test_data["low"].iloc[-1], test_data["high"].iloc[-1]
 
         next_data = test_data.iloc[t+1]
         low, high = next_data["low"], next_data["high"]
 
         # 이전봉 데이터        
-        prev_data = test_data.iloc[t-1: t]
+        prev_data = test_data.iloc[t-1]
         if prev_data.empty:
             print('=========== prev_data empty ================')
             time.sleep(0.1)
-            prev_data = pyupbit.get_ohlcv(ticker, 'minute', to=data['timestamp'].iloc[-1], count=1)
+            prev_data = pyupbit.get_ohlcv(ticker, 'minute', to=data['timestamp'], count=1)
         
         time.sleep(0.1)
-        before5_mean = pyupbit.get_ohlcv(ticker, 'minute5', to=data['timestamp'].iloc[-1], count=5)['close'].mean()
+        before5_mean = pyupbit.get_ohlcv(ticker, 'minute5', to=data['timestamp'], count=5)['close'].mean()
 
-        stick_size = data['open'].iloc[-1] - data['close'].iloc[-1]
+        stick_size = data['open'] - data['close']
 
         # 음봉 전환
-        if stick_size < 0:
-            print('=============={} 음봉전환 ================'.format(data['timestamp'].iloc[-1]))
+        if stick_size > 0:
+            print('======================= 음봉전환 stick_size :: {} ================'.format(stick_size))
+            print('=============={} 음봉전환 ================'.format(data['timestamp']))
             tic_count += 1
         
             # 이전 다섯봉 평균보다 2,3배 이상 로직 추가
             if stick_size >= before5_mean * 2:
                 print('============= 이전 5봉 평균보다 크다 ========== ')
                 tic += 1
-            tic_start = prev_data['close'].iloc[-1] # 직전 마감가
+            tic_start = prev_data['close'] # 직전 마감가
     
             if tic_count == 2:
-                print('================= 음봉전환 후 tic_count : {}'.format(tic_count))
+                print('================= 누적 tic_count : {}'.format(tic_count))
                 # 전종가 * 0.0005 >= 현종가
-                if data['close'].iloc[-1] <= tic_start * (1-0.0003):
+                if data['close'] <= tic_start * (1-0.0005):
                     tic += 1
 
             # 음봉 전환 후 두번째 틱 계산
             if tic_count > 2:
-                print('======================== 음봉전환 후 두번째 틱 계산 ====================')
-                if data['close'].iloc[-1] <= tic_start * (1-0.0003) : # 일정금액 보다 크면 tic count
+                print('======================== 누적 tic_count 가 2초과인 경우의 tic 계산 ====================')
+                if data['close'] <= tic_start * (1-0.0005) : # 일정금액 보다 크면 tic count
                     tic += 1
-                    tic_start = data['close'].iloc[-1] # tic count시의 직전가
-            
+                    tic_start = data['close'] # tic count시의 직전가
+                
             if tic >= 3:
                 print('==================== 구매 tic : {} ==============='.format(tic))
                 # 구매 금액 체크
-                available, price = check_available_bought_price(data['close'].iloc[-1], low, high)
+                available, price = check_available_bought_price(data['close'], low, high)
                 if available:
                     # 구매
                     trader.buy(price)
-                    print('======================== {} 시간 매수 완료 : {} =============== '.format(data['timestamp'].iloc[-1], price))
+                    print('======================== {} 시간 매수 완료 : {} =============== '.format(data['timestamp'], price))
+                    tic_count = 0
+                    tic_start = 0
 
-        elif stick_size >= 0: # 양봉전환
+        elif stick_size < 0: # 양봉전환
+            print('======================= 양봉전환 stick_size :: {} ================'.format(stick_size))
             print('======================= tic ::::::: {} ===================== '.format(tic))
+            if tic >= 1 and tic < 3:
+                print('============== tic값 1 이상 3 미만인경우 ========== {} '.format(tic))
+                tic_count = 0
+                tic_start = 0
+                tic = 0
+                
             if upbit.balances[ticker]['avg_buy_price'] > 0:
                 # (코인현재가(data['close']) - 매수평균가('avg_buy_price')) / 매수평균가(avg_buy_price) * 100
-                buy_profit = ((data['close'].iloc[-1] - upbit.balances[ticker]['avg_buy_price']) / upbit.balances[ticker]['avg_buy_price']) * 100
+                buy_profit = ((data['close'] - upbit.balances[ticker]['avg_buy_price']) / upbit.balances[ticker]['avg_buy_price']) * 100
                 if tic >= 3:
                     if buy_profit >= 0.0005:
-                        available, price = check_available_sold_price(data['close'].iloc[-1], low, high)
+                        available, price = check_available_sold_price(data['close'], low, high)
                         # TODO: 특정 금액보다 양봉이 크게 일어난 경우 구매 로직 추가 필요
                         if available:
                             trader.sell(price)
@@ -122,7 +132,11 @@ def backtesting(
                             tic_count = 0
                             tic = 0
 
-                            print('======================== {} 시간 매도 완료 : {} =============== '.format(data['timestamp'].iloc[-1], price))
+                            print('======================== {} 시간 매도 완료 : {} =============== '.format(data['timestamp'], price))
+                else:
+                    # 양봉전환인데 매도 못한경우
+                    tic_count = 0
+                    tic_start = 0
 
         # 입력된 t 시점의 데이터를 바탕으로
         # 살지, 팔지, 그대로 있을지와 거래 금액을 결정합니다.
