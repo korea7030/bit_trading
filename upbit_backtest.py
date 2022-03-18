@@ -68,7 +68,7 @@ def backtesting(
             prev_data = pyupbit.get_ohlcv(ticker, 'minute', to=data['timestamp'], count=1)
         
         time.sleep(0.1)
-        before5_mean = pyupbit.get_ohlcv(ticker, 'minute5', to=data['timestamp'], count=5)['close'].mean()
+        before5_mean_stick_size = pyupbit.get_ohlcv(ticker, 'minute5', to=data['timestamp'], count=5)['open'].mean() - pyupbit.get_ohlcv(ticker, 'minute5', to=data['timestamp'], count=5)['close'].mean()
 
         stick_size = data['open'] - data['close']
 
@@ -76,12 +76,13 @@ def backtesting(
         if stick_size > 0:
             print('======================= 음봉전환 stick_size :: {} ================'.format(stick_size))
             print('=============={} 음봉전환 ================'.format(data['timestamp']))
+            print('=============={} 이전 5분봉 크기 : {} ============'.format(data['timestamp'], before5_mean_stick_size))
             tic_count += 1
         
             # 이전 다섯봉 평균보다 2,3배 이상 로직 추가
-            if stick_size >= before5_mean * 2:
-                print('============= 이전 5봉 평균보다 크다 ========== ')
-                tic += 1
+            if abs(stick_size) >= abs(before5_mean_stick_size) * 2:
+                print('============= 이전 5봉 평균보다 크다 현재 봉 : {}, 이전5봉 : {} ========== '.format(abs(stick_size), abs(before5_mean_stick_size)))
+                tic += 2 # 2틱으로 바로
             tic_start = prev_data['close'] # 직전 마감가
     
             if tic_count == 2:
@@ -120,8 +121,9 @@ def backtesting(
             if upbit.balances[ticker]['avg_buy_price'] > 0:
                 # (코인현재가(data['close']) - 매수평균가('avg_buy_price')) / 매수평균가(avg_buy_price) * 100
                 buy_profit = ((data['close'] - upbit.balances[ticker]['avg_buy_price']) / upbit.balances[ticker]['avg_buy_price']) * 100
+                print('============== 수익률 {} ================='.format(buy_profit))
                 if tic >= 3:
-                    if buy_profit >= 0.0005:
+                    if buy_profit >= 0.05:
                         available, price = check_available_sold_price(data['close'], low, high)
                         # TODO: 특정 금액보다 양봉이 크게 일어난 경우 구매 로직 추가 필요
                         if available:
