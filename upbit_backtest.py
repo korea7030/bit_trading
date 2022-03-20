@@ -123,7 +123,7 @@ def backtesting(
                 buy_profit = ((data['close'] - upbit.balances[ticker]['avg_buy_price']) / upbit.balances[ticker]['avg_buy_price']) * 100
                 print('============== 수익률 {} ================='.format(buy_profit))
                 if tic >= 3:
-                    if buy_profit >= 0.05:
+                    if buy_profit >= 0.5:
                         available, price = check_available_sold_price(data['close'], low, high)
                         # TODO: 특정 금액보다 양봉이 크게 일어난 경우 구매 로직 추가 필요
                         if available:
