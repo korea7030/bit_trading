@@ -82,11 +82,12 @@ def backtesting(
             # 이전 다섯봉 평균보다 2,3배 이상 로직 추가
             if abs(stick_size) >= abs(before5_mean_stick_size) * 2:
                 print('============= 이전 5봉 평균보다 크다 현재 봉 : {}, 이전5봉 : {} ========== '.format(abs(stick_size), abs(before5_mean_stick_size)))
-                tic += 2 # 2틱으로 바로
+
+                if tic_count <= 1:
+                    tic += 1
             tic_start = prev_data['close'] # 직전 마감가
     
             if tic_count == 2:
-                print('================= 누적 tic_count : {}'.format(tic_count))
                 # 전종가 * 0.0005 >= 현종가
                 if data['close'] <= tic_start * (1-0.0005):
                     tic += 1
@@ -106,24 +107,19 @@ def backtesting(
                     # 구매
                     trader.buy(price)
                     print('======================== {} 시간 매수 완료 : {} =============== '.format(data['timestamp'], price))
+                    print('============================= {} 시간 가격 : {}, 매수평균 금액 : {} ==============='.format(data['timestamp'], price, upbit.balances[ticker]['avg_buy_price']))
                     tic_count = 0
                     tic_start = 0
-
+                    tic = 0
+            print('###################################################### tic_count : {}, tic : {}, tic_start: {} ######################################################'.format(tic_count, tic, tic_start))
         elif stick_size < 0: # 양봉전환
             print('======================= 양봉전환 stick_size :: {} ================'.format(stick_size))
-            print('======================= tic ::::::: {} ===================== '.format(tic))
-            if tic >= 1 and tic < 3:
-                print('============== tic값 1 이상 3 미만인경우 ========== {} '.format(tic))
-                tic_count = 0
-                tic_start = 0
-                tic = 0
-                
             if upbit.balances[ticker]['avg_buy_price'] > 0:
                 # (코인현재가(data['close']) - 매수평균가('avg_buy_price')) / 매수평균가(avg_buy_price) * 100
                 buy_profit = ((data['close'] - upbit.balances[ticker]['avg_buy_price']) / upbit.balances[ticker]['avg_buy_price']) * 100
                 print('============== 수익률 {} ================='.format(buy_profit))
                 if tic >= 3:
-                    if buy_profit >= 0.5:
+                    if buy_profit >= 0.05:
                         available, price = check_available_sold_price(data['close'], low, high)
                         # TODO: 특정 금액보다 양봉이 크게 일어난 경우 구매 로직 추가 필요
                         if available:
@@ -135,10 +131,17 @@ def backtesting(
                             tic = 0
 
                             print('======================== {} 시간 매도 완료 : {} =============== '.format(data['timestamp'], price))
+                            print('======================== {} 시점 balance : {} ================ '.format(data['timestamp'], trader.krw_balance))
                 else:
                     # 양봉전환인데 매도 못한경우
                     tic_count = 0
                     tic_start = 0
+                    tic = 0
+            else:
+                # 양봉전환인데 매도 못한경우
+                tic_count = 0
+                tic_start = 0
+                tic = 0
 
         # 입력된 t 시점의 데이터를 바탕으로
         # 살지, 팔지, 그대로 있을지와 거래 금액을 결정합니다.
