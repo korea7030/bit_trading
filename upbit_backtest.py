@@ -116,7 +116,9 @@ def backtesting(
             print('======================= 양봉전환 stick_size :: {} ================'.format(stick_size))
             if upbit.balances[ticker]['avg_buy_price'] > 0:
                 # (코인현재가(data['close']) - 매수평균가('avg_buy_price')) / 매수평균가(avg_buy_price) * 100
-                buy_profit = ((data['close'] - upbit.balances[ticker]['avg_buy_price']) / upbit.balances[ticker]['avg_buy_price']) * 100
+                # 실시간으로 할 경우 현재가를 가져오기 떄문에 더 정확함. 백테스팅은 정확하기 힘듦
+                buy_profit = ((upbit.balances[ticker]['balance'] * data['close']) - (upbit.balances[ticker]['balance'] * upbit.balances[ticker]['avg_buy_price'])) * 100 / upbit.balances[ticker]['avg_buy_price']
+                # (float(nowPrice)- float(value['avg_buy_price'])) * 100.0 / float(value['avg_buy_price'])
                 print('============== 수익률 {} ================='.format(buy_profit))
                 if tic >= 3:
                     if buy_profit >= 0.05:
@@ -137,11 +139,11 @@ def backtesting(
                     tic_count = 0
                     tic_start = 0
                     tic = 0
-            else:
-                # 양봉전환인데 매도 못한경우
-                tic_count = 0
-                tic_start = 0
-                tic = 0
+
+            # 매도를 안해도 양봉전환 되면 초기화
+            tic_count = 0
+            tic_start = 0
+            tic = 0
 
         # 입력된 t 시점의 데이터를 바탕으로
         # 살지, 팔지, 그대로 있을지와 거래 금액을 결정합니다.

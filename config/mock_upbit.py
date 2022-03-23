@@ -1,3 +1,8 @@
+import uuid
+
+from datetime import datetime
+
+
 class MockUpbit:
     def __init__(
         self,
@@ -19,6 +24,8 @@ class MockUpbit:
                 "avg_buy_price": 0.,
             },
         }
+
+        self.orders = {ticker: []}
 
         self.fee = 0.0005
 
@@ -58,6 +65,17 @@ class MockUpbit:
         )
         self.balances[ticker]["balance"] += volume
         self.balances[ticker]["avg_buy_price"] /= self.balances[ticker]["balance"]
+
+        # 주문내역 추가
+        self.orders[ticker].append({
+            'market': ticker,
+            'state': 'done',
+            'ask_type': 'ask',
+            'volume': str(volume),
+            'price': str(price),
+            'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+            'uuid': uuid.uuid4()
+        })
         return True
 
     def sell_limit_order(
@@ -77,4 +95,15 @@ class MockUpbit:
         # 거래한 만큼 잔고를 변화시킵니다.
         self.balances["KRW"]["balance"] += total_price
         self.balances[ticker]["balance"] -= volume
+
+        # 주문내역 추가(매도)
+        self.orders[ticker].append({
+            'market': ticker,
+            'state': 'done',
+            'ask_type': 'bid',
+            'volume': str(volume),
+            'price': str(price),
+            'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+            'uuid': uuid.uuid4()
+        })
         return True
