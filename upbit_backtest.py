@@ -36,6 +36,9 @@ def check_available_sold_price(
         return True, max(price, low)
     return False, None
 
+def get_stick_size(open, close):
+    '''stick size 함수(이전 5개봉 가져오는데 사용)'''
+    return abs(open - close)
 
 def backtesting(
     test_data,
@@ -68,7 +71,9 @@ def backtesting(
             prev_data = pyupbit.get_ohlcv(ticker, 'minute', to=data['timestamp'], count=1)
         
         time.sleep(0.1)
-        before5_mean_stick_size = pyupbit.get_ohlcv(ticker, 'minute5', to=data['timestamp'], count=5)['open'].mean() - pyupbit.get_ohlcv(ticker, 'minute5', to=data['timestamp'], count=5)['close'].mean()
+        before5_df = pyupbit.get_ohlcv(ticker, 'minute5', to=data['timestamp'], count=5)
+        before5_df['stick_size'] = before5_df.apply(lambda x: get_stick_size(x['open'], x['close']), axis=1)
+        before5_mean_stick_size = before5_df['stick_size'].mean()
 
         stick_size = data['open'] - data['close']
 
@@ -80,7 +85,7 @@ def backtesting(
             tic_count += 1
         
             # 이전 다섯봉 평균보다 2,3배 이상 로직 추가
-            if abs(stick_size) >= abs(before5_mean_stick_size) * 2:
+            if abs(stick_size) >= before5_mean_stick_size * 2:
                 print('============= 이전 5봉 평균보다 크다 현재 봉 : {}, 이전5봉 : {} ========== '.format(abs(stick_size), abs(before5_mean_stick_size)))
 
                 if tic_count <= 1:
