@@ -1,4 +1,15 @@
+import sys
 import datetime
+
+
+def get_current_time(mili_time):
+    '''
+    현재시간
+    '''
+    mili_time = float(mili_time)
+    KST = datetime.timezone(datetime.timedelta(hours=9))
+    dt = datetime.datetime.fromtimestamp(mili_time, tz=KST)
+    return dt
 
 
 def get_time_ss(mili_time):
