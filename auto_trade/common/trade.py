@@ -1,5 +1,6 @@
 import sys
 import pyupbit
+from datetime import datetime
 
 def get_current_price(up, coin_name):
     message = ''
@@ -250,3 +251,14 @@ def cancel_all_order(up, coin_name):
                 break
 
     return message
+
+
+def get_order_info(up, coin_name, status):
+    '''
+    최근 거래정보 가져오기
+    '''
+    latest_order_datetime = None
+    ticker_order_list = up.get_order(coin_name, status)
+    created_at = ticker_order_list[0].get('created_at')
+    latest_order_datetime = datetime.fromisoformat(created_at)
+    return latest_order_datetime

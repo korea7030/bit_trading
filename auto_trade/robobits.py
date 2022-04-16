@@ -96,36 +96,42 @@ while True:
               - 단 매도 조건은 구매이력이 now 값 이후 이력이 있을 시에 수익률 체크 후 매도하도록
             '''
             print('====================== 5분봉이 같은 경우, 매도로직 진입 =====================')
-            # 잔고 조회(잔고, 평균매입금액)
-            message, buy_amt, buy_price = trade.get_krw_balance(upbit)
-            if message != "good":
-                utils.log_info("+[{}]stop loss-get_balances error msg:{}".
-                          format(utils.get_time_hhmmss(time.time()), message))
-                continue
-            time.sleep(process_sleep_time)
+            
+            print('====================== 5분봉 수행후의 거래가 있는지 확인 ====================')
+            after_5m_latest_order_datetime = trade.get_order_info(upbit, coin_name, 'done')
 
-            if float(buy_amt) > 0:
-                #현재가 조회
-                message, result = trade.get_current_price(upbit, coin_name)
+            if after_5m_latest_order_datetime > now:
+                print('====================== 5분봉 3틱룰 수행 후 구매한 거래내역이 있다!! ============= ')
+                # 잔고 조회(잔고, 평균매입금액)
+                message, buy_amt, buy_price = trade.get_krw_balance(upbit)
                 if message != "good":
-                    utils.log_info("+[{}]stop loss-get_current_price error msg:{}".
-                                format(utils.get_time_hhmmss(time.time()), message))
+                    utils.log_info("+[{}]stop loss-get_balances error msg:{}".
+                            format(utils.get_time_hhmmss(time.time()), message))
                     continue
-                
-                buy_profit = ((result - buy_price) / buy_price) * 100  # 수익률
+                time.sleep(process_sleep_time)
 
-                if buy_profit >= revenue_rate:  # 0.05 보다 수익률이 크면, 매도 실행
-                    #손실최소화 주문
-                    message, uuid = trade.stop_loss(upbit, coin_name, buy_amt, buy_price, result, max_loss_rate)
+                if float(buy_amt) > 0:
+                    #현재가 조회
+                    message, result = trade.get_current_price(upbit, coin_name)
+                    if message != "good":
+                        utils.log_info("+[{}]stop loss-get_current_price error msg:{}".
+                                    format(utils.get_time_hhmmss(time.time()), message))
+                        continue
+                    
+                    buy_profit = ((result - buy_price) / buy_price) * 100  # 수익률
 
-                    if message == "good":
-                        stop_uuid = uuid
-                        utils.log_info(
-                            "*[{}]stop loss id:{} buy_amt:{} buy_price:{} now_price:{} msg:{}".format(
-                                utils.get_time_hhmmss(time.time()), stop_uuid, buy_amt,
-                                buy_price, result, message)
-                        )
-                    time.sleep(process_sleep_time)
+                    if buy_profit >= revenue_rate:  # 0.05 보다 수익률이 크면, 매도 실행
+                        #손실최소화 주문
+                        message, uuid = trade.stop_loss(upbit, coin_name, buy_amt, buy_price, result, max_loss_rate)
+
+                        if message == "good":
+                            stop_uuid = uuid
+                            utils.log_info(
+                                "*[{}]stop loss id:{} buy_amt:{} buy_price:{} now_price:{} msg:{}".format(
+                                    utils.get_time_hhmmss(time.time()), stop_uuid, buy_amt,
+                                    buy_price, result, message)
+                            )
+                        time.sleep(process_sleep_time)
         else:
             '''
             2. 5분봉3틱룰 수행
@@ -219,58 +225,62 @@ while True:
 
             elif stick_size < 0:
                 print('======================= 양봉전환 stick_size :: {} ================'.format(stick_size))
-                # 계좌 조회(message, 잔고, 평균구매금액)
-                message, buy_amt, buy_price = trade.get_krw_balance(upbit)
-                if message != "good":
-                    utils.log_info("+[{}]stop loss-get_balances error msg:{}".
-                                format(utils.get_time_hhmmss(time.time()), message))
-                    continue
-                
-                # 잔고가 있는 경우
-                if float(buy_amt) > 0:
-                    # 현재가 조회(message, result)
-                    message, result = trade.get_current_price(upbit, coin_name)
+                print('====================== 5분봉 수행후의 거래가 있는지 확인 ====================')
+                after_5m_latest_order_datetime = trade.get_order_info(upbit, coin_name, 'done')
+
+                if after_5m_latest_order_datetime > now:
+                    # 계좌 조회(message, 잔고, 평균구매금액)
+                    message, buy_amt, buy_price = trade.get_krw_balance(upbit)
                     if message != "good":
-                        utils.log_info("+[{}]stop loss-get_current_price error msg:{}".
+                        utils.log_info("+[{}]stop loss-get_balances error msg:{}".
                                     format(utils.get_time_hhmmss(time.time()), message))
                         continue
                     
-                    # 수익률 : (코인현재가 - 매수평균가) / 매수평균가 * 100
-                    buy_profit = ((result - buy_price) / buy_price) * 100
-                    print('============== 수익률 {} ================='.format(buy_profit))
-
-                    if tic >= 3:
-                        if buy_profit >= revenue_rate:
-                            # 잔고 조회(잔고, 평균매입금액)
-                            message, buy_amt, buy_price = trade.get_krw_balance(upbit)
-                            if message != "good":
-                                utils.log_info("+[{}]stop loss-get_balances error msg:{}".
+                    # 잔고가 있는 경우
+                    if float(buy_amt) > 0:
+                        # 현재가 조회(message, result)
+                        message, result = trade.get_current_price(upbit, coin_name)
+                        if message != "good":
+                            utils.log_info("+[{}]stop loss-get_current_price error msg:{}".
                                         format(utils.get_time_hhmmss(time.time()), message))
-                                continue
-                            time.sleep(process_sleep_time)
+                            continue
+                        
+                        # 수익률 : (코인현재가 - 매수평균가) / 매수평균가 * 100
+                        buy_profit = ((result - buy_price) / buy_price) * 100
+                        print('============== 수익률 {} ================='.format(buy_profit))
 
-                            if float(buy_amt) > 0:
-                                #현재가 조회
-                                message, result = trade.get_current_price(upbit, coin_name)
+                        if tic >= 3:
+                            if buy_profit >= revenue_rate:
+                                # 잔고 조회(잔고, 평균매입금액)
+                                message, buy_amt, buy_price = trade.get_krw_balance(upbit)
                                 if message != "good":
-                                    utils.log_info("+[{}]stop loss-get_current_price error msg:{}".
-                                                format(utils.get_time_hhmmss(time.time()), message))
+                                    utils.log_info("+[{}]stop loss-get_balances error msg:{}".
+                                            format(utils.get_time_hhmmss(time.time()), message))
                                     continue
-                                
-                                buy_profit = ((result - buy_price) / buy_price) * 100  # 수익률
+                                time.sleep(process_sleep_time)
 
-                                if buy_profit >= revenue_rate:  # 0.05 보다 수익률이 크면, 매도 실행
-                                    #손실최소화 주문
-                                    message, uuid = trade.stop_loss(upbit, coin_name, buy_amt, buy_price, result, max_loss_rate)
+                                if float(buy_amt) > 0:
+                                    #현재가 조회
+                                    message, result = trade.get_current_price(upbit, coin_name)
+                                    if message != "good":
+                                        utils.log_info("+[{}]stop loss-get_current_price error msg:{}".
+                                                    format(utils.get_time_hhmmss(time.time()), message))
+                                        continue
+                                    
+                                    buy_profit = ((result - buy_price) / buy_price) * 100  # 수익률
 
-                                    if message == "good":
-                                        stop_uuid = uuid
-                                        utils.log_info(
-                                            "*[{}]stop loss id:{} buy_amt:{} buy_price:{} now_price:{} msg:{}".format(
-                                                utils.get_time_hhmmss(time.time()), stop_uuid, buy_amt,
-                                                buy_price, result, message)
-                                        )
-                                    time.sleep(process_sleep_time)
+                                    if buy_profit >= revenue_rate:  # 0.05 보다 수익률이 크면, 매도 실행
+                                        #손실최소화 주문
+                                        message, uuid = trade.stop_loss(upbit, coin_name, buy_amt, buy_price, result, max_loss_rate)
+
+                                        if message == "good":
+                                            stop_uuid = uuid
+                                            utils.log_info(
+                                                "*[{}]stop loss id:{} buy_amt:{} buy_price:{} now_price:{} msg:{}".format(
+                                                    utils.get_time_hhmmss(time.time()), stop_uuid, buy_amt,
+                                                    buy_price, result, message)
+                                            )
+                                        time.sleep(process_sleep_time)
                     else:
                         tic_count = 0
                         tic_start = 0
