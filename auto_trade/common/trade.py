@@ -72,9 +72,10 @@ def get_balances(up, coin_name):
 
     if message == 'good':
         for temp in result:
+            print('temp ::: ', temp)
             if temp['currency'] == trade_coin:
-                buy_amt = temp['balance']
-                buy_price = temp['avg_buy_price']
+                buy_amt = float(temp['balance'])
+                buy_price = float(temp['avg_buy_price'])
 
     return message, buy_amt, buy_price
 
@@ -107,6 +108,24 @@ def get_order_status(up, coin_name, uuid):
 
     return message, state, price, amt
 
+
+#손실최소화 주문
+def stop_loss(up, coin_name, buy_amt, buy_price, now_price, stop_loss_rate):
+    buy_price_tot = float(buy_amt) * float(buy_price)  # 구매금액
+    now_price_tot = float(buy_amt) * float(now_price)  # 현재금액
+    stop_price = buy_price_tot * float(stop_loss_rate)  # 손실최소화 금액
+    message = 'not yet'
+    uuid = 'none'
+
+    if buy_price_tot - now_price_tot > stop_price: #손실최소화금액 도달시 매도
+        try:
+            trade_price = "{:0.0{}f}".format(float(now_price), 0)  # 소수점 첫째자리
+            trade_amt = "{:0.0{}f}".format(float(buy_amt), 4)  # 소수점 넷째자리
+            message, uuid = sell_limit_order(up, coin_name, trade_price, trade_amt)
+        except:
+            message = "{}".format(sys.exc_info())
+
+    return message, uuid
 
 
 
