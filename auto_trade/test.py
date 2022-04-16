@@ -1,9 +1,13 @@
+import os
 import pyupbit 
 from datetime import datetime
+from dotenv import load_dotenv
+load_dotenv()
 
-access_key = "OS2zw6iLXxSlWSBWQ8rQ1pDm9xt4fLNJs8efHIh6"
-secret_key = "ndCQxHjGXUpGhZHWL8MzwC7yYnga2pAxE19KrRfG"
-upbit = pyupbit.Upbit(access_key, secret_key)
+access = os.getenv('ACCESS_KEY')
+secret = os.getenv('SECRET_KEY')
+
+upbit = pyupbit.Upbit(access, secret)
 
 # 잔고 조회
 balances = upbit.get_balances()
