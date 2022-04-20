@@ -103,7 +103,7 @@ while True:
             if after_5m_latest_order_datetime > now:
                 print('====================== 5분봉 3틱룰 수행 후 구매한 거래내역이 있다!! ============= ')
                 # 잔고 조회(잔고, 평균매입금액)
-                message, buy_amt, buy_price = trade.get_krw_balance(upbit)
+                message, buy_amt, buy_price = trade.get_balances(upbit, coin_name)
                 if message != "good":
                     utils.log_info("+[{}]stop loss-get_balances error msg:{}".
                             format(utils.get_time_hhmmss(time.time()), message))
@@ -181,7 +181,7 @@ while True:
                     
 
                     #계좌조회
-                    message, buy_amt, buy_price = trade.get_krw_balance(upbit)
+                    message, buy_amt, buy_price = trade.get_balances(upbit, coin_name)
                     if message != "good":
                         utils.log_info("+[{}]buy coin-get_balances error msg:{}".
                                     format(utils.get_time_hhmmss(time.time()), message))
@@ -230,7 +230,7 @@ while True:
 
                 if after_5m_latest_order_datetime > now:
                     # 계좌 조회(message, 잔고, 평균구매금액)
-                    message, buy_amt, buy_price = trade.get_krw_balance(upbit)
+                    message, buy_amt, buy_price = trade.get_balances(upbit, coin_name)
                     if message != "good":
                         utils.log_info("+[{}]stop loss-get_balances error msg:{}".
                                     format(utils.get_time_hhmmss(time.time()), message))
@@ -252,7 +252,7 @@ while True:
                         if tic >= 3:
                             if buy_profit >= revenue_rate:
                                 # 잔고 조회(잔고, 평균매입금액)
-                                message, buy_amt, buy_price = trade.get_krw_balance(upbit)
+                                message, buy_amt, buy_price = trade.get_balances(upbit, coin_name)
                                 if message != "good":
                                     utils.log_info("+[{}]stop loss-get_balances error msg:{}".
                                             format(utils.get_time_hhmmss(time.time()), message))
