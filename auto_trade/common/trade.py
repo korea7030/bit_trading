@@ -73,7 +73,6 @@ def get_balances(up, coin_name):
 
     if message == 'good':
         for temp in result:
-            print('temp ::: ', temp)
             if temp['currency'] == trade_coin:
                 buy_amt = float(temp['balance'])
                 buy_price = float(temp['avg_buy_price'])
@@ -118,6 +117,9 @@ def stop_loss(up, coin_name, buy_amt, buy_price, now_price, stop_loss_rate):
     message = 'not yet'
     uuid = 'none'
 
+    print('구매금액 ::: {}'.format(buy_price_tot))
+    print('현재금액 ::: {}'.format(now_price_tot))
+    print('손실최소화금액 ::: {}'.format(stop_price))
     if buy_price_tot - now_price_tot > stop_price: #손실최소화금액 도달시 매도
         try:
             trade_price = "{:0.0{}f}".format(float(now_price), 0)  # 소수점 첫째자리

@@ -66,6 +66,7 @@ while True:
         01, 02초 시점에는 데이터 가져오는 것만 수행.
         봉이 생긴지 초기이기 때문
         '''
+        print('======================= 현재시간 : {} ======================='.format(utils.get_current_time(time.time())))
         m1_df = pyupbit.get_ohlcv(coin_name, 'minute1', count=1)
         m1_reset_df = m1_df.reset_index()
         m1_reset_df = m1_reset_df.rename(columns=RESET_COLUMNS)
@@ -89,12 +90,16 @@ while True:
         before_5ae_reset_df['stick_size'] = before_5ae_reset_df.apply(lambda x: get_stick_size(x['open'], x['close']), axis=1)
         before5_mean_stick_size = before_5ae_reset_df['stick_size'].mean()
 
+        utils.log_info('========== m1_reset_df : {}, current_m5_reset_df : {}, prev_data_reset_df : {}, stick_size: {}, before_5ae_reset_df : {}, before5_mean_stick_size : {}'.format(
+            m1_reset_df['timestamp'][0], current_m5_reset_df['timestamp'][0], prev_data_reset_df['timestamp'][0], stick_size, before_5ae_reset_df['timestamp'][0], before5_mean_stick_size
+        ))
         if current_m5_reset_df['timestamp'][0] == m5_datetime:
             '''
             1. 수익률 비교 후 매도만 진행
               - 01, 02초때 조회한 현 시점의 5분봉데이터와 global 5분봉 데이터비교하여 같으면 5분이 안지났다는 신호로 간주
               - 단 매도 조건은 구매이력이 now 값 이후 이력이 있을 시에 수익률 체크 후 매도하도록
             '''
+            print('========== current_m5_reset_df : {} ========== m5_datetime : {} =========='.format(current_m5_reset_df['timestamp'][0], m5_datetime))
             print('====================== 5분봉이 같은 경우, 매도로직 진입 =====================')
             
             print('====================== 5분봉 수행후의 거래가 있는지 확인 ====================')
@@ -197,6 +202,7 @@ while True:
                     close = float(result)
 
                     order_buy_amt = buy_amt_unit + float(buy_amt) * increace_rate
+                    print('=============== order by amt :::::: {} ================== '.format(order_buy_amt))
 
                     # 현재가 조회
                     message, result = trade.get_current_price(upbit, coin_name)
@@ -209,6 +215,7 @@ while True:
                     trade_price = "{:0.0{}f}".format(float(result), 0) #정수
                     trade_amt = "{:0.0{}f}".format(order_buy_amt, 4)  #소수점 넷째자리
 
+                    print('================= 거래 단위 :::: {}, {} =================='.format(trade_price, trade_amt))
                     # order
                     message, order_uuid = trade.buy_limit_order(upbit, coin_name, trade_price, trade_amt)
                     if message != "good":
@@ -225,6 +232,7 @@ while True:
 
             elif stick_size < 0:
                 print('======================= 양봉전환 stick_size :: {} ================'.format(stick_size))
+                print('=============={} 양봉전환 ================'.format(current_m5_reset_df['timestamp'][0]))
                 print('====================== 5분봉 수행후의 거래가 있는지 확인 ====================')
                 after_5m_latest_order_datetime = trade.get_order_info(upbit, coin_name, 'done')
 
@@ -269,18 +277,17 @@ while True:
                                     
                                     buy_profit = ((result - buy_price) / buy_price) * 100  # 수익률
 
-                                    if buy_profit >= revenue_rate:  # 0.05 보다 수익률이 크면, 매도 실행
-                                        #손실최소화 주문
-                                        message, uuid = trade.stop_loss(upbit, coin_name, buy_amt, buy_price, result, max_loss_rate)
+                                    #손실최소화 주문
+                                    message, uuid = trade.stop_loss(upbit, coin_name, buy_amt, buy_price, result, max_loss_rate)
 
-                                        if message == "good":
-                                            stop_uuid = uuid
-                                            utils.log_info(
-                                                "*[{}]stop loss id:{} buy_amt:{} buy_price:{} now_price:{} msg:{}".format(
-                                                    utils.get_time_hhmmss(time.time()), stop_uuid, buy_amt,
-                                                    buy_price, result, message)
-                                            )
-                                        time.sleep(process_sleep_time)
+                                    if message == "good":
+                                        stop_uuid = uuid
+                                        utils.log_info(
+                                            "*[{}]stop loss id:{} buy_amt:{} buy_price:{} now_price:{} msg:{}".format(
+                                                utils.get_time_hhmmss(time.time()), stop_uuid, buy_amt,
+                                                buy_price, result, message)
+                                        )
+                                    time.sleep(process_sleep_time)
                     else:
                         tic_count = 0
                         tic_start = 0
