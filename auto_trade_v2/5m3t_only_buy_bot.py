@@ -142,46 +142,51 @@ def start_buytrade(buy_amt):
                         logging.info("*********************************************************")
                         target_items = upbit.get_accounts('Y', 'KRW', 'KRW-BTC')
                         target_items_comma = upbit.chg_account_to_comma(target_items)
+                        logging.info("************************ target_items_comma ****************", target_items_comma)
                         # 미체결 주문 취소
-                        upbit.cancel_order(target_items_comma, 'SELL')
-                        tickers = upbit.get_ticker(target_items_comma)
+                        if target_items_comma != '':
+                            upbit.cancel_order(target_items_comma, 'SELL')
+                            tickers = upbit.get_ticker(target_items_comma)
 
-                        for target_item in target_items:
-                            for ticker in tickers:
-                                if target_item['market'] == ticker['market']:
-                                    order_done = upbit.get_order_status(target_item['market'], 'done') + upbit.get_order_status(target_item['market'], 'cancel')
-                                    order_done_sorted = upbit.orderby_dict(order_done, 'created_at', True)
-                                    order_done_filtered = upbit.filter_dict(order_done_sorted, 'side', 'bid')
-                                    # -------------------------------------------------
-                                    # 매수 직후 나타나는 오류 체크용 마지막 매수 시간 차이 계산
-                                    # -------------------------------------------------
-                                    # 마지막 매수 시간
-                                    last_buy_dt = datetime.strptime(dateutil.parser.parse(order_done_filtered[0]['created_at']).strftime('%Y-%m-%d %H:%M:%S'), '%Y-%m-%d %H:%M:%S')
-                                    
-                                    if last_buy_dt > now:
-                                        # -----------------------------------------------------
-                                        # 수익률 계산
-                                        # ((현재가 - 평균매수가) / 평균매수가) * 100
-                                        # -----------------------------------------------------
-                                        today_order_list = [x for x in order_done_filtered if x['created_at'] >= datetime.now().strftime('%Y-%m-%d') + 'T00:00' and x['created_at'] <= datetime.now().strftime('%Y-%m-%d') + 'T23:59']
+                            for target_item in target_items:
+                                for ticker in tickers:
+                                    if target_item['market'] == ticker['market']:
+                                        order_done = upbit.get_order_status(target_item['market'], 'done') + upbit.get_order_status(target_item['market'], 'cancel')
+                                        order_done_sorted = upbit.orderby_dict(order_done, 'created_at', True)
+                                        order_done_filtered = upbit.filter_dict(order_done_sorted, 'side', 'bid')
+                                        # -------------------------------------------------
+                                        # 매수 직후 나타나는 오류 체크용 마지막 매수 시간 차이 계산
+                                        # -------------------------------------------------
+                                        # 마지막 매수 시간
+                                        last_buy_dt = datetime.strptime(dateutil.parser.parse(order_done_filtered[0]['created_at']).strftime('%Y-%m-%d %H:%M:%S'), '%Y-%m-%d %H:%M:%S')
+                                        
+                                        if last_buy_dt > now:
+                                            today_order_list = [x for x in order_done_filtered if x['created_at'] >= datetime.now().strftime('%Y-%m-%d')]
 
-                                        # 현재날짜의 구매시점의 평균매수가 누적
-                                        today_cum_trade_price = 0
-                                        # 현재날짜에 구매한 가격 누적
-                                        today_cum_price = 0
-                                        # 오늘 몇번 구매했는지 체크
-                                        today_trade_cnt = 0
+                                            # 현재날짜의 구매시점의 평균매수가 누적
+                                            today_cum_trade_price = 0
+                                            # 현재날짜에 구매한 가격 누적
+                                            today_cum_price = 0
+                                            # 오늘 몇번 구매했는지 체크
+                                            today_trade_cnt = 0
 
-                                        for today_order_for in today_order_list:
-                                            order_uuid = upbit.get_order_uuid(today_order_for['uuid'])
-                                            today_cum_trade_price += Decimal(order_uuid['trades'][0]['price']) # 누적 거래단가
-                                            today_cum_price += Decimal(order_uuid['price']) # 누적 거래금액
-                                            today_trade_cnt += 1 # 누적 거래 count
+                                            for today_order_for in today_order_list:
+                                                order_uuid = upbit.get_order_uuid(today_order_for['uuid'])
+                                                today_cum_trade_price += Decimal(order_uuid['trades'][0]['price']) # 누적 거래단가
+                                                today_cum_price += Decimal(order_uuid['price']) # 누적 거래금액
+                                                today_trade_cnt += 1 # 누적 거래 count
 
-                                        # rev_pcnt = round(((Decimal(str(ticker['trade_price'])) - Decimal(str(target_item['avg_buy_price']))) / Decimal(str(target_item['avg_buy_price']))) * 100, 2)
-                                        if today_cum_trade_price > 0:
-                                            today_avg_buy_price = today_cum_trade_price / today_trade_cnt
-                                            rev_pcnt = round(((Decimal(str(ticker['trade_price'])) - today_avg_buy_price) / today_avg_buy_price) * 100, 2)
+                                            if today_cum_trade_price > 0:
+                                                today_avg_buy_price = today_cum_trade_price / today_trade_cnt
+                                                logging.info('------------------- 오늘 매수한 금액의 평균매수가 : {} ----------------'.format(today_avg_buy_price))
+                                            # -----------------------------------------------------
+                                            # 수익률 계산
+                                            # ((현재가 - 평균매수가) / 평균매수가) * 100
+                                            # -----------------------------------------------------
+                                            rev_pcnt = round(((Decimal(str(ticker['trade_price'])) - Decimal(str(target_item['avg_buy_price']))) / Decimal(str(target_item['avg_buy_price']))) * 100, 2)
+                                            # if today_cum_trade_price > 0:
+                                                # today_avg_buy_price = today_cum_trade_price / today_trade_cnt
+                                                # rev_pcnt = round(((Decimal(str(ticker['trade_price'])) - today_avg_buy_price) / today_avg_buy_price) * 100, 2)
 
                                             logging.info('')
                                             logging.info('------------------------------------------------------')
@@ -199,8 +204,8 @@ def start_buytrade(buy_amt):
                                                     # 지정가 매도(최근 거래내역의 price)
                                                     # ------------------------------------------------------------------
                                                     logging.info('지정가 매도 시작! [' + str(target_item['market']) + ']')
-                                                    # rtn_sellcoin_tg = upbit.sellcoin_tg(target_item['market'], order_done_filtered[0]['price'])
-                                                    rtn_sellcoin_tg = upbit.sellcoin_tg(target_item['market'], str(today_cum_price))
+                                                    rtn_sellcoin_tg = upbit.sellcoin_tg(target_item['market'], order_done_filtered[0]['price'])
+                                                    # rtn_sellcoin_tg = upbit.sellcoin_tg(target_item['market'], str(today_cum_price))
                                                     logging.info('지정가 매도 종료! [' + str(target_item['market']) + ']')
                                                     logging.info(rtn_sellcoin_tg)
                                                     logging.info('------------------------------------------------------')
@@ -214,17 +219,17 @@ def start_buytrade(buy_amt):
                                                 else:
                                                     logging.info('- 현재 수익률이 ' + str(1) + '% 보다 크지 않아 매도하지 않음') 
                                                     logging.info('------------------------------------------------------')
-                                    else:
-                                        logging.info('- 최근 매수 일자가 코드 실행시간보다 작으므로 매도하지 않음')
-                                        logging.info('------------------------------------------------------')
-                                        tic_count = 0
-                                        tic_start = 0
-                                        tic = 0
-                                        continue
-                        # 매도를 안해도 양봉전환시 reset
-                        # tic_count = 0
-                        # tic_start = 0
-                        # tic = 0
+                                        else:
+                                            logging.info('- 최근 매수 일자가 코드 실행시간보다 작으므로 매도하지 않음')
+                                            logging.info('------------------------------------------------------')
+                                            tic_count = 0
+                                            tic_start = 0
+                                            tic = 0
+                                            continue
+                            # 매도를 안해도 양봉전환시 reset
+                            # tic_count = 0
+                            # tic_start = 0
+                            # tic = 0
                     logging.info("************ loop 수행 후 tic : {}, tic_count : {} ************".format(tic, tic_count))
                     # else:
                     #     logging.info("********************5분단위 대기중 ***************************")

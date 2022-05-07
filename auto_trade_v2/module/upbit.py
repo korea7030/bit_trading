@@ -892,7 +892,7 @@ def cancel_order(target_item, side):
  
         # 매수/매도 구분
         for order_data_for in order_data:
- 
+
             if side == "BUY" or side == "buy":
                 if order_data_for['side'] == "ask":
                     order_data.remove(order_data_for)
