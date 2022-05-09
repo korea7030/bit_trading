@@ -142,7 +142,7 @@ def start_buytrade(buy_amt):
                         logging.info("*********************************************************")
                         target_items = upbit.get_accounts('Y', 'KRW', 'KRW-BTC')
                         target_items_comma = upbit.chg_account_to_comma(target_items)
-                        logging.info("************************ target_items_comma ****************", target_items_comma)
+                        logging.info("************************ target_items_comma : {} ****************".format(target_items_comma))
                         # 미체결 주문 취소
                         if target_items_comma != '':
                             upbit.cancel_order(target_items_comma, 'SELL')
@@ -219,17 +219,28 @@ def start_buytrade(buy_amt):
                                                 else:
                                                     logging.info('- 현재 수익률이 ' + str(1) + '% 보다 크지 않아 매도하지 않음') 
                                                     logging.info('------------------------------------------------------')
+                                                    tic_start = 0
+                                                    tic_count = 0
+                                                    tic = 0
+                                            else:
+                                                tic_start = 0
+                                                tic_count = 0
+                                                tic = 0
                                         else:
                                             logging.info('- 최근 매수 일자가 코드 실행시간보다 작으므로 매도하지 않음')
                                             logging.info('------------------------------------------------------')
                                             tic_count = 0
                                             tic_start = 0
                                             tic = 0
-                                            continue
+
                             # 매도를 안해도 양봉전환시 reset
-                            # tic_count = 0
-                            # tic_start = 0
-                            # tic = 0
+                            tic_count = 0
+                            tic_start = 0
+                            tic = 0
+
+                        tic_count = 0
+                        tic_start = 0
+                        tic = 0
                     logging.info("************ loop 수행 후 tic : {}, tic_count : {} ************".format(tic, tic_count))
                     # else:
                     #     logging.info("********************5분단위 대기중 ***************************")
