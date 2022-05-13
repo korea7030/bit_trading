@@ -201,13 +201,15 @@ def start_buytrade(buy_amt):
                                             if trade_flag:
                                                 if Decimal(str(rev_pcnt)) >= Decimal(str(1)):
                                                     # ------------------------------------------------------------------
-                                                    # 지정가 매도(최근 거래내역의 price)
+                                                    # 시장가 매도(최근 거래내역의 price)
                                                     # ------------------------------------------------------------------
-                                                    logging.info('지정가 매도 시작! [' + str(target_item['market']) + ']')
-                                                    rtn_sellcoin_tg = upbit.sellcoin_tg(target_item['market'], order_done_filtered[0]['price'])
+                                                    logging.info('시장가 매도 시작! [' + str(target_item['market']) + ']')
+                                                    logging.info('최근 거래내역의 price :: {}'.format(order_done_filtered[0]['price']))
+                                                    # rtn_sellcoin_tg = upbit.sellcoin_tg(target_item['market'], order_done_filtered[0]['price'])
                                                     # rtn_sellcoin_tg = upbit.sellcoin_tg(target_item['market'], str(today_cum_price))
-                                                    logging.info('지정가 매도 종료! [' + str(target_item['market']) + ']')
-                                                    logging.info(rtn_sellcoin_tg)
+                                                    rtn_sellcoin_mp = upbit.sellcoin_mp(target_item['market'], 'N')
+                                                    logging.info('시장가 매도 종료! [' + str(target_item['market']) + ']')
+                                                    logging.info(rtn_sellcoin_mp)
                                                     logging.info('------------------------------------------------------')
 
                                                     tic_start = 0
@@ -222,10 +224,6 @@ def start_buytrade(buy_amt):
                                                     tic_start = 0
                                                     tic_count = 0
                                                     tic = 0
-                                            else:
-                                                tic_start = 0
-                                                tic_count = 0
-                                                tic = 0
                                         else:
                                             logging.info('- 최근 매수 일자가 코드 실행시간보다 작으므로 매도하지 않음')
                                             logging.info('------------------------------------------------------')

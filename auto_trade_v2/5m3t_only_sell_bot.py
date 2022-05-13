@@ -75,12 +75,13 @@ def start_selltrade(now, sell_pcnt):
 
                                     if Decimal(str(rev_pcnt)) >= Decimal(str(sell_pcnt)):  # 1%보다 수익률이 크면 매도 실행
                                         # ------------------------------------------------------------------
-                                        # 지정가 매도(최근 거래내역의 price)
+                                        # 시장가 매도(최근 거래내역의 price)
                                         # ------------------------------------------------------------------
-                                        logging.info('지정가 매도 시작! [' + str(target_item['market']) + ']')
-                                        rtn_sellcoin_tg = upbit.sellcoin_tg(target_item['market'], today_cum_price)
-                                        logging.info('지정가 매도 종료! [' + str(target_item['market']) + ']')
-                                        logging.info(rtn_sellcoin_tg)
+                                        logging.info('시장가 매도 시작! [' + str(target_item['market']) + ']')
+                                        # rtn_sellcoin_tg = upbit.sellcoin_tg(target_item['market'], today_cum_price)
+                                        rtn_sellcoin_mp = upbit.sellcoin_mp(target_item['market'], 'N')
+                                        logging.info('시장가 매도 종료! [' + str(target_item['market']) + ']')
+                                        logging.info(rtn_sellcoin_mp)
                                         logging.info('------------------------------------------------------')
                                 else:
                                     logging.info('- 최근 매수 일자가 코드 실행시간보다 작으므로 매도하지 않음')
