@@ -31,19 +31,19 @@ def start_buytrade(buy_amt):
         tickers = sorted(tickers, key=lambda d: d['acc_trade_price_24h'], reverse=True)[:6]
 
         while True:
-            tic = 0
-            tic_count = 0
-            tic_start = 0
-
             check_mm = upbit.get_time_mm(time.time())
             check_ss = upbit.get_time_ss(time.time())
             if check_mm in ('04', '14', '24', '34', '44', '54', '09', '19', '29', '39', '49', '59'):
                 if check_ss == '59':
                     for ticker in tickers:
+                        tic = 0
+                        tic_count = 0
+                        tic_start = 0
+
                         upbit.cancel_order(ticker['market'], 'BUY')
-                        print('================= ticker :::: {} ==================='.format(ticker['market']))
+                        logging.info('================= ticker :::: {} ==================='.format(ticker['market']))
                         m5_candle = upbit.get_candle(ticker['market'], '5', 1)
-                        print('==================== candle time : {} ================'.format(m5_candle[0]['candle_date_time_kst']))
+                        logging.info('==================== candle time : {} ================'.format(m5_candle[0]['candle_date_time_kst']))
                         before_5_m5_candle = upbit.get_candle(ticker['market'], '5', 5)
                         stick_size = m5_candle[0]['opening_price'] - m5_candle[0]['trade_price']
 
@@ -66,8 +66,8 @@ def start_buytrade(buy_amt):
                             tic_start = m5_candle[0]['opening_price']
 
                             try:
-                                ticker_dict[ticker['market']]['tic_count'] = tic_count
-                                ticker_dict[ticker['market']]['tic_start'] = tic_start
+                                ticker_dict[ticker['market']]['tic_count'] += tic_count
+                                ticker_dict[ticker['market']]['tic_start'] += tic_start
                             except KeyError:
                                 ticker_dict[ticker['market']] = {'tic_count': tic_count, 'tic_start': tic_start, 'tic': 0}
 
@@ -75,7 +75,7 @@ def start_buytrade(buy_amt):
                                 logging.info('이전 5분 5개봉의 크기보다 크다')
                                 if ticker_dict[ticker['market']]['tic_count'] <= 1:
                                     tic += 1
-                                    ticker_dict[ticker['market']]['tic'] = tic
+                                    ticker_dict[ticker['market']]['tic'] += tic
 
                             tic_start = m5_candle[0]['opening_price']
                             ticker_dict[ticker['market']]['tic_start'] = tic_start
@@ -83,15 +83,15 @@ def start_buytrade(buy_amt):
                             if ticker_dict[ticker['market']]['tic_count'] == 2:
                                 if m5_candle[0]['trade_price'] <= ticker_dict[ticker['market']]['tic_start'] * (1-0.0005):
                                     tic += 1
-                                    ticker_dict[ticker['market']]['tic'] = tic
+                                    ticker_dict[ticker['market']]['tic'] += tic
 
                             if ticker_dict[ticker['market']]['tic_count'] > 2:
                                 logging.info('***********************ticker {} 누적 tic_count 가 2초과인 경우의 tic 계산 ***********************'.format(ticker['market']))
                                 if m5_candle[0]['trade_price'] <= tic_start * (1-0.0005):
                                     tic += 1
                                     tic_start = m5_candle[0]['opening_price']
-                                    ticker_dict[ticker['market']]['tic'] = tic
-                                    ticker_dict[ticker['market']]['tic_start'] = tic_start
+                                    ticker_dict[ticker['market']]['tic'] += tic
+                                    ticker_dict[ticker['market']]['tic_start'] += tic_start
 
                             if ticker_dict[ticker['market']]['tic'] >= 3:
                                 logging.info('*********************** ticker: {},  구매 tic : {} ***********************'.format(ticker['market'], tic))
