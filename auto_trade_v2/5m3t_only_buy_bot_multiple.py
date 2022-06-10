@@ -222,9 +222,9 @@ def start_buytrade(buy_amt):
                                                     logging.info('ticker: {}, 최근 거래내역의 price :: {}'.format(ticker['market'], order_done_filtered[0]['price']))
                                                     # rtn_sellcoin_tg = upbit.sellcoin_tg(target_item['market'], order_done_filtered[0]['price'])
                                                     # rtn_sellcoin_tg = upbit.sellcoin_tg(target_item['market'], str(today_cum_price))
-                                                    # rtn_sellcoin_mp = upbit.sellcoin_mp(target_item['market'], 'N')
+                                                    rtn_sellcoin_mp = upbit.sellcoin_mp(target_item['market'], 'N')
                                                     logging.info('ticker: {}, 시장가 매도 종료! [' + str(target_item['market']) + ']'.format(ticker['market']))
-                                                    # logging.info(rtn_sellcoin_mp)
+                                                    logging.info(rtn_sellcoin_mp)
                                                     logging.info('------------------------------------------------------')
 
                                                     tic_start = 0
