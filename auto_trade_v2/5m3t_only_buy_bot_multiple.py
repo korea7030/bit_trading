@@ -28,7 +28,7 @@ def start_buytrade(buy_amt):
         ticker_dict = {}
         items = [item['market'] for item in upbit.get_items('KRW', '')]
         tickers = upbit.get_ticker(items)
-        tickers = sorted(tickers, key=lambda d: d['acc_trade_price_24h'], reverse=True)[:6]
+        tickers = sorted(tickers, key=lambda d: d['acc_trade_volume'], reverse=True)[:6]
 
         while True:
             check_mm = upbit.get_time_mm(time.time())
