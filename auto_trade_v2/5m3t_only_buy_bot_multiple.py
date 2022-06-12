@@ -26,15 +26,17 @@ trade_flag = False  # 매수 flag(매수 시점에 True, 매도하면 False)
 def start_buytrade(buy_amt):
     try:
         ticker_dict = {}
-        items = [item['market'] for item in upbit.get_items('KRW', '')]
-        tickers = upbit.get_ticker(items)
-        tickers = sorted(tickers, key=lambda d: d['acc_trade_price_24h'], reverse=True)[:6]
 
         while True:
             check_mm = upbit.get_time_mm(time.time())
             check_ss = upbit.get_time_ss(time.time())
+
             if check_mm in ('04', '14', '24', '34', '44', '54', '09', '19', '29', '39', '49', '59'):
                 if check_ss == '59':
+                    items = [item['market'] for item in upbit.get_items('KRW', '')]
+                    tickers = upbit.get_ticker(items)
+                    tickers = sorted(tickers, key=lambda d: d['acc_trade_price_24h'], reverse=True)[:6]
+
                     for ticker in tickers:
                         tic = 0
                         tic_count = 0
@@ -162,7 +164,7 @@ def start_buytrade(buy_amt):
                             # 미체결 주문 취소
                             if target_items_comma != '':
                                 upbit.cancel_order(target_items_comma, 'SELL')
-                                tickers = upbit.get_ticker(target_items_comma)
+                                # tickers = upbit.get_ticker(target_items_comma)
 
                                 for target_item in target_items:
                                     if target_item['market'] == ticker['market']:
@@ -198,19 +200,23 @@ def start_buytrade(buy_amt):
                                             # 수익률 계산
                                             # ((현재가 - 평균매수가) / 평균매수가) * 100
                                             # -----------------------------------------------------
-                                            rev_pcnt = round(((Decimal(str(ticker['trade_price'])) - Decimal(str(target_item['avg_buy_price']))) / Decimal(str(target_item['avg_buy_price']))) * 100, 2)
+                                            # 현재가 다시 구하기
+                                            current_trade_price = upbit.get_ticker(ticker['market'])
+                                            rev_pcnt = round(
+                                                (
+                                                    (Decimal(str(current_trade_price[0]['trade_price'])) - Decimal(str(target_item['avg_buy_price']))) 
+                                                    / Decimal(str(target_item['avg_buy_price']))
+                                                ) * 100, 2)
                                             # if today_cum_trade_price > 0:
                                                 # today_avg_buy_price = today_cum_trade_price / today_trade_cnt
                                                 # rev_pcnt = round(((Decimal(str(ticker['trade_price'])) - today_avg_buy_price) / today_avg_buy_price) * 100, 2)
 
-                                            logging.info('')
                                             logging.info('------------------------------------------------------')
                                             logging.info('- 종목:' + str(target_item['market']))
                                             logging.info('- 평균매수가:' + str(target_item['avg_buy_price']))
-                                            logging.info('- 현재가:' + str(ticker['trade_price']))
+                                            logging.info('- 현재가:' + str(current_trade_price[0]['trade_price']))
                                             logging.info('- 수익률:' + str(rev_pcnt))
 
-                                            logging.info('-------------- 매도 tic : {} --------------'.format(tic))
                                             # tic 값으로 비교했다가 매수 후에 tic 값이 0 으로 바뀌기 때문에, 
                                             # 매수 시점에 flag로 5분봉3틱룰에 기반하여 매수했다 판단하고 매도하도록 변경
                                             if ticker_dict[ticker['market']]['trade_flag']:
@@ -280,7 +286,7 @@ def start_buytrade(buy_amt):
                                                         'trade_flag': False
                                                     }
                     logging.info('*************** loop 수행 후 ticker 값 : {} ***************'.format(ticker_dict))
-
+                    logging.info('*************************************************************************\n\n\n')
             time.sleep(1)
     except Exception:
         raise
