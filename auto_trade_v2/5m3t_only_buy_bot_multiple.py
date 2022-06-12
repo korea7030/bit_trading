@@ -43,9 +43,7 @@ def start_buytrade(buy_amt):
                         tic_start = 0
 
                         upbit.cancel_order(ticker['market'], 'BUY')
-                        logging.info('================= ticker :::: {} ==================='.format(ticker['market']))
                         m5_candle = upbit.get_candle(ticker['market'], '5', 1)
-                        logging.info('==================== candle time : {} ================'.format(m5_candle[0]['candle_date_time_kst']))
                         before_5_m5_candle = upbit.get_candle(ticker['market'], '5', 5)
                         stick_size = m5_candle[0]['opening_price'] - m5_candle[0]['trade_price']
 
@@ -154,13 +152,12 @@ def start_buytrade(buy_amt):
 
                                 continue
                         else:
-                            logging.info("*********************************************************")
+                            logging.info("\n\n*********************************************************")
                             logging.info("**************** ticker: {}, {} 양봉전환 ****************".format(ticker['market'], m5_candle[0]['candle_date_time_kst']))
                             logging.info("*********************************************************")
                             target_items = upbit.get_accounts('Y', 'KRW', ticker['market'])
                             target_items_comma = upbit.chg_account_to_comma(target_items)
-                            logging.info("************************ target_items_comma : {} ****************".format(target_items_comma))
-
+                            logging.info("************************ target_items_comma : {} ****************\n\n".format(target_items_comma))
                             # 미체결 주문 취소
                             if target_items_comma != '':
                                 upbit.cancel_order(target_items_comma, 'SELL')
@@ -204,7 +201,7 @@ def start_buytrade(buy_amt):
                                             current_trade_price = upbit.get_ticker(ticker['market'])
                                             rev_pcnt = round(
                                                 (
-                                                    (Decimal(str(current_trade_price[0]['trade_price'])) - Decimal(str(target_item['avg_buy_price']))) 
+                                                    (Decimal(str(ticker['trade_price'])) - Decimal(str(target_item['avg_buy_price']))) 
                                                     / Decimal(str(target_item['avg_buy_price']))
                                                 ) * 100, 2)
                                             # if today_cum_trade_price > 0:
@@ -214,7 +211,7 @@ def start_buytrade(buy_amt):
                                             logging.info('------------------------------------------------------')
                                             logging.info('- 종목:' + str(target_item['market']))
                                             logging.info('- 평균매수가:' + str(target_item['avg_buy_price']))
-                                            logging.info('- 현재가:' + str(current_trade_price[0]['trade_price']))
+                                            logging.info('- 현재가:' + str(ticker['trade_price']))
                                             logging.info('- 수익률:' + str(rev_pcnt))
 
                                             # tic 값으로 비교했다가 매수 후에 tic 값이 0 으로 바뀌기 때문에, 
