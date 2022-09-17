@@ -399,12 +399,15 @@ def sellcoin_tg(target_item, sell_price):
     try:
  
         # 잔고 조회
-        cur_balance = get_balance(target_item)
+        # cur_balance = get_balance(target_item)
+        
+        cur_balance = get_ticker(target_item)
+        print('cur_balance ::: ', cur_balance)
  
         query = {
             'market': target_item,
             'side': 'ask',
-            'volume': cur_balance,
+            'volume': sell_price / cur_balance[0]['trade_price'],
             'price': sell_price,
             'ord_type': 'limit',
         }
@@ -433,6 +436,7 @@ def sellcoin_tg(target_item, sell_price):
         logging.info("----------------------------------------------")
         logging.info("지정가 매도 설정 완료!")
         logging.info(rtn_data)
+        print('=-======== rtn_data : {} =========='.format(rtn_data))
         logging.info("----------------------------------------------")
 
         message = '\n\n[지정강 매도 요청 완료!]'
@@ -728,17 +732,6 @@ def get_krwbal():
     except Exception:
         raise
  
- 
-# -----------------------------------------------------------------------------
-# - Name : get_accounts
-# - Desc : 잔고정보 조회
-# - Input
-#   1) except_yn : KRW 및 소액 제외
-#   2) market_code : 마켓코드 추가(매도시 필요)
-# - Output
-#   1) 잔고 정보
-# -----------------------------------------------------------------------------
-# 계좌 조회
 # -----------------------------------------------------------------------------
 # - Name : get_accounts
 # - Desc : 잔고정보 조회
