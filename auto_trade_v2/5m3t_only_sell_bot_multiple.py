@@ -78,35 +78,6 @@ def start_selltrade(now, sell_pcnt, limit_sell_pcnt):
                         #     for today_order_for in today_order_list:
                         #         today_cum_price += today_order_for['price']
                         if Decimal(str(rev_pcnt)) >= Decimal(str(sell_pcnt)):  # 1%보다 수익률이 크면 매도 실행
-                                                                                                                                                                                                                                                                                                                                                          1,1           Top
-                        # -------------------------------------------------
-                        # 마지막 매도 시간
-                        last_buy_dt = datetime.strptime(dateutil.parser.parse(order_done_filtered[0]['created_at']).strftime('%Y-%m-%d %H:%M:%S'), '%Y-%m-%d %H:%M:%S')
-
-                        # -----------------------------------------------------
-                        # 수익률 계산
-                        # ((현재가 - 평균매수가) / 평균매수가) * 100
-                        # -----------------------------------------------------
-                        rev_pcnt = round(((Decimal(str(ticker['trade_price'])) - Decimal(str(target_item['avg_buy_price']))) / Decimal(str(target_item['avg_buy_price']))) * 100, 2)
-
-
-                        logging.info('')
-                        logging.info('------------------------------------------------------')
-                        logging.info('- 종목:' + str(target_item['market']))
-                        logging.info('- 평균매수가:' + str(target_item['avg_buy_price']))
-                        logging.info('- 현재가:' + str(ticker['trade_price']))
-                        logging.info('- 수익률:' + str(rev_pcnt))
-
-                        # # 코드 시작시간보다 크면 매도
-                        # if last_buy_dt > now:
-                        #     today_order_list = [x for x in order_done_filtered if x['created_at'] >= now]
-
-                        #     # 구매한 가격 누적
-                        #     today_cum_price = 0
-
-                        #     for today_order_for in today_order_list:
-                        #         today_cum_price += today_order_for['price']
-                        if Decimal(str(rev_pcnt)) >= Decimal(str(sell_pcnt)):  # 1%보다 수익률이 크면 매도 실행
                             # ------------------------------------------------------------------
                             # 시장가 매도(최근 거래내역의 price)
                             # ------------------------------------------------------------------
