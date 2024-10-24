@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import time
 import os
 import sys
@@ -16,6 +17,7 @@ global now
 now = upbit.get_current_time(time.time())
 
 trade_flag = False  # 매수 flag(매수 시점에 True, 매도하면 False)
+CANDLE_MARGIN = 0.4
 
 # -----------------------------------------------------------------------------
 # - Name : start_buytrade
@@ -23,7 +25,7 @@ trade_flag = False  # 매수 flag(매수 시점에 True, 매도하면 False)
 # - Input
 # 1) buy_amt : 매수금액
 # -----------------------------------------------------------------------------
-def start_buytrade(buy_amt):
+def start_buytrade(buy_amt, limit_sell_pcnt):
     try:
         ticker_dict = {}
 
@@ -34,6 +36,7 @@ def start_buytrade(buy_amt):
             if check_mm in ('04', '14', '24', '34', '44', '54', '09', '19', '29', '39', '49', '59'):
                 if check_ss == '59':
                     items = [item['market'] for item in upbit.get_items('KRW', '')]
+                    # items = ['KRW-BTC','KRW-ETH', 'KRW-BCH', 'KRW-BSV', 'KRW-SOL', 'KRW-ETC', 'KRW-BTG']
                     tickers = upbit.get_ticker(items)
                     tickers = sorted(tickers, key=lambda d: d['acc_trade_price_24h'], reverse=True)[:6]
 
@@ -50,7 +53,7 @@ def start_buytrade(buy_amt):
                         before_5_m5_stick_size_cum = 0
                         for before_5_m5_candle_for in before_5_m5_candle:
                             before_5_m5_stick_size_cum += upbit.get_stick_size(before_5_m5_candle_for['opening_price'], before_5_m5_candle_for['trade_price'])
-                        
+
                         before_5_m5_stick_size = before_5_m5_stick_size_cum / 5
                         logging.info("*********************************************************")
                         logging.info("5분봉 : " + str(m5_candle))
@@ -81,13 +84,13 @@ def start_buytrade(buy_amt):
                             ticker_dict[ticker['market']]['tic_start'] = tic_start
 
                             if ticker_dict[ticker['market']]['tic_count'] == 2:
-                                if m5_candle[0]['trade_price'] <= ticker_dict[ticker['market']]['tic_start'] * (1-0.0005):
+                                if m5_candle[0]['trade_price'] <= ticker_dict[ticker['market']]['tic_start'] * CANDLE_MARGIN:
                                     tic += 1
                                     ticker_dict[ticker['market']]['tic'] += tic
 
                             if ticker_dict[ticker['market']]['tic_count'] > 2:
                                 logging.info('***********************ticker {} 누적 tic_count 가 2초과인 경우의 tic 계산 ***********************'.format(ticker['market']))
-                                if m5_candle[0]['trade_price'] <= tic_start * (1-0.0005):
+                                if m5_candle[0]['trade_price'] <= tic_start * CANDLE_MARGIN:
                                     tic += 1
                                     tic_start = m5_candle[0]['opening_price']
                                     ticker_dict[ticker['market']]['tic'] += tic
@@ -104,7 +107,7 @@ def start_buytrade(buy_amt):
                                 # if len(account) > 0:
                                 #     logging.info('기 매수 종목으로 매수하지 않음....[' + 'KRW-BTC' + ']')
                                 #     continue
-                                
+
                                 # ------------------------------------------------------------------
                                 # 매수금액 설정
                                 # 1. M : 수수료를 제외한 최대 가능 KRW 금액만큼 매수
@@ -114,7 +117,7 @@ def start_buytrade(buy_amt):
 
                                 if buy_amt == 'M':
                                     buy_amt = available_amt
-                                
+
                                 # ------------------------------------------------------------------
                                 # 입력 금액이 주문 가능금액보다 작으면 종료
                                 # ------------------------------------------------------------------
@@ -137,7 +140,10 @@ def start_buytrade(buy_amt):
                                 rtn_buycoin_mp = upbit.buycoin_mp(ticker['market'], buy_amt)
                                 logging.info('시장가 매수 종료! [' + ticker['market'] + ']')
                                 logging.info(rtn_buycoin_mp)
-                                
+
+                                if rtn_buycoin_mp == '':
+                                    continue
+
                                 tic_count = 0
                                 tic_start = 0
                                 tic = 0
@@ -148,7 +154,7 @@ def start_buytrade(buy_amt):
                                     'tic': tic,
                                     'trade_flag': True
                                 }
-                                
+
 
                                 continue
                         else:
@@ -173,7 +179,7 @@ def start_buytrade(buy_amt):
                                         # -------------------------------------------------
                                         # 마지막 매수 시간
                                         last_buy_dt = datetime.strptime(dateutil.parser.parse(order_done_filtered[0]['created_at']).strftime('%Y-%m-%d %H:%M:%S'), '%Y-%m-%d %H:%M:%S')
-                                        
+
                                         if last_buy_dt > now:
                                             today_order_list = [x for x in order_done_filtered if x['created_at'] >= datetime.now().strftime('%Y-%m-%d')]
 
@@ -201,7 +207,7 @@ def start_buytrade(buy_amt):
                                             current_trade_price = upbit.get_ticker(ticker['market'])
                                             rev_pcnt = round(
                                                 (
-                                                    (Decimal(str(ticker['trade_price'])) - Decimal(str(target_item['avg_buy_price']))) 
+                                                    (Decimal(str(ticker['trade_price'])) - Decimal(str(target_item['avg_buy_price'])))
                                                     / Decimal(str(target_item['avg_buy_price']))
                                                 ) * 100, 2)
                                             # if today_cum_trade_price > 0:
@@ -214,10 +220,10 @@ def start_buytrade(buy_amt):
                                             logging.info('- 현재가:' + str(ticker['trade_price']))
                                             logging.info('- 수익률:' + str(rev_pcnt))
 
-                                            # tic 값으로 비교했다가 매수 후에 tic 값이 0 으로 바뀌기 때문에, 
+                                            # tic 값으로 비교했다가 매수 후에 tic 값이 0 으로 바뀌기 때문에,
                                             # 매수 시점에 flag로 5분봉3틱룰에 기반하여 매수했다 판단하고 매도하도록 변경
                                             if ticker_dict[ticker['market']]['trade_flag']:
-                                                if Decimal(str(rev_pcnt)) >= Decimal(str(1)):
+                                                if Decimal(str(rev_pcnt)) >= Decimal(str(2)) or Decimal(str(rev_pcnt)) <= Decimal(str(limit_sell_pcnt)):
                                                     # ------------------------------------------------------------------
                                                     # 시장가 매도(최근 거래내역의 price)
                                                     # ------------------------------------------------------------------
@@ -238,7 +244,7 @@ def start_buytrade(buy_amt):
                                                     del ticker_dict[ticker['market']]
                                                     continue
                                                 else:
-                                                    logging.info('- 현재 수익률이 ' + str(1) + '% 보다 크지 않아 매도하지 않음') 
+                                                    logging.info('- 현재 수익률이 ' + str(1) + '% 보다 크지 않아 매도하지 않음')
                                                     logging.info('------------------------------------------------------')
                                                     ticker_dict[ticker['market']] = {
                                                         'tic_start': 0,
@@ -292,10 +298,10 @@ def start_buytrade(buy_amt):
 # - Desc : 메인
 # -----------------------------------------------------------------------------
 if __name__ == '__main__':
- 
+
     # noinspection PyBroadException
     try:
- 
+
         # ---------------------------------------------------------------------
         # 입력 받을 변수
         #
@@ -309,29 +315,32 @@ if __name__ == '__main__':
         # 3. 매수 제외종목
         #   1) 종목코드(콤마구분자) : BTC,ETH
         # ---------------------------------------------------------------------
- 
+
         # 1. 로그레벨
         # log_level = input("로그레벨(D:DEBUG, E:ERROR, 그 외:INFO) : ").upper()
         # buy_amt = input("매수금액(M:최대, 10000:1만원) : ").upper()
         log_level = sys.argv[1]
         buy_amt = sys.argv[2]
- 
+        limit_sell_pcnt = sys.argv[3]
+
         upbit.set_loglevel(log_level)
- 
+
         logging.info("*********************************************************")
         logging.info("1. 로그레벨 : " + str(log_level))
-        logging.info("2. 매수금액 : " + str(buy_amt))
+        logging.info("2. 매수금액 " +  str(buy_amt))
+        logging.info("3. 매도제한 : " +str(limit_sell_pcnt))
         logging.info("*********************************************************")
- 
+
         # 매수 로직 시작
-        start_buytrade(buy_amt)
- 
+        start_buytrade(buy_amt, limit_sell_pcnt)
+
     except KeyboardInterrupt:
         logging.error("KeyboardInterrupt Exception 발생!")
         logging.error(traceback.format_exc())
         sys.exit(-100)
- 
+
     except Exception:
         logging.error("Exception 발생!")
         logging.error(traceback.format_exc())
+        upbit.send_teleram_message(traceback.format_exc()[:100], error_flag=True)
         sys.exit(-200)
