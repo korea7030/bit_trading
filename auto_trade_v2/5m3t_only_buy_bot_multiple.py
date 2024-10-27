@@ -39,7 +39,7 @@ def start_buytrade(buy_amt, limit_sell_pcnt):
                 items = [item['market'] for item in upbit.get_items('KRW', '')]
                 # items = ['KRW-BTC','KRW-ETH', 'KRW-BCH', 'KRW-BSV', 'KRW-SOL', 'KRW-ETC', 'KRW-BTG']
                 tickers = upbit.get_ticker(items)
-                tickers = sorted(tickers, key=lambda d: d['acc_trade_price_24h'], reverse=True)[:6]
+                tickers = sorted(tickers, key=lambda d: d['acc_trade_price_24h'], reverse=True)[:10]
 
                 for ticker in tickers:
                     tic = 0
